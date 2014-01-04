@@ -1,0 +1,437 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="description" content=""><meta name="author" content="phrontizein"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Extending Nikola | reflection eternal</title><link href="../assets/css/all-nocdn.css" rel="stylesheet" type="text/css"><!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js" type="text/javascript"></script>
+    <![endif]--><link rel="alternate" type="application/rss+xml" title="RSS" href="../rss.xml"></head><body>
+    <section class="social"><ul><li><a href="../index.html" title="Home"><i class="icon-home"></i></a></li>
+        
+    
+        
+            <li><a href="http://getnikola.com" title="About me"><i class="icon-user"></i></a></li>
+        
+    
+        
+            <li><a href="../categories/index.html" title="Tags"><i class="icon-tags"></i></a></li>
+        
+    
+        
+            <li><a href="../archive.html" title="Archives"><i class="icon-folder-open-alt"></i></a></li>
+        
+    
+        
+            <li><a href="../rss.xml" title="RSS"><i class="icon-rss"></i></a></li>
+        
+    
+        
+            <li><a href="https://github.com/phrontizein" title="My Github"><i class="icon-github"></i></a></li>
+        
+    
+        
+            <li><a href="../galleries/demo/index.html" title="Gallery"><i class="icon-picture"></i></a></li>
+        
+    
+        
+            <li><a href="https://twitter.com/getnikola" title="My Twitter"><i class="icon-twitter"></i></a></li>
+        
+    
+
+        </ul></section><section class="page-content"><div class="content" rel="main">
+            
+
+    <h1>Extending Nikola</h1>
+
+    <div><div class="section" id="extending-nikola">
+<h2><a class="toc-backref" href="extending.html#id1">Extending Nikola</a></h2>
+<table class="docutils field-list" frame="void" rules="none"><col class="field-name"><col class="field-body"><tbody valign="top"><tr class="field"><th class="field-name">Version:</th><td class="field-body">6.2.1</td>
+</tr><tr class="field"><th class="field-name">Author:</th><td class="field-body">Roberto Alsina &lt;<a class="reference external" href="mailto:ralsina@netmanagers.com.ar">ralsina@netmanagers.com.ar</a>&gt;</td>
+</tr></tbody></table><div class="contents alert alert-info pull-right topic" id="contents">
+<p class="topic-title first">Contents</p>
+<ul class="simple"><li><a class="reference internal" href="extending.html#extending-nikola" id="id1">Extending Nikola</a><ul><li><a class="reference internal" href="extending.html#command-plugins" id="id2">Command Plugins</a></li>
+<li><a class="reference internal" href="extending.html#templatesystem-plugins" id="id3">TemplateSystem Plugins</a></li>
+<li><a class="reference internal" href="extending.html#task-plugins" id="id4">Task Plugins</a></li>
+<li><a class="reference internal" href="extending.html#pagecompiler-plugins" id="id5">PageCompiler Plugins</a></li>
+<li><a class="reference internal" href="extending.html#restextension-plugins" id="id6">RestExtension Plugins</a></li>
+<li><a class="reference internal" href="extending.html#signalhandler-plugins" id="id7">SignalHandler Plugins</a></li>
+</ul></li>
+<li><a class="reference internal" href="extending.html#plugin-index" id="id8">Plugin Index</a></li>
+<li><a class="reference internal" href="extending.html#path-link-resolution-mechanism" id="id9">Path/Link Resolution Mechanism</a></li>
+</ul></div>
+<p>Nikola is extensible. Almost all its functionality is based on plugins,
+and you can add your own or replace the provided ones.</p>
+<p>Plugins consist of a metadata file (with <tt class="docutils literal">.plugin</tt> extension) and
+a python module (a <tt class="docutils literal">.py</tt> file) or package (a folder containing
+a <tt class="docutils literal">__init__.py</tt> file.</p>
+<p>To use a plugin in your site, you just have to put it in a <tt class="docutils literal">plugins</tt>
+folder in your site.</p>
+<p>Plugins come in various flavours, aimed at extending different aspects
+of Nikola.</p>
+<div class="section" id="command-plugins">
+<h3><a class="toc-backref" href="extending.html#id2">Command Plugins</a></h3>
+<p>When you run <tt class="docutils literal">nikola <span class="pre">--help</span></tt> you will see something like this:</p>
+<pre class="literal-block">
+$ nikola help
+Nikola is a tool to create static websites and blogs. For full documentation and more
+information, please visit http://getnikola.com
+
+
+Available commands:
+nikola auto                 automatically detect site changes, rebuild
+                            and optionally refresh a browser
+nikola bootswatch_theme     given a swatch name from bootswatch.com and a
+                            parent theme, creates a custom theme
+nikola build                run tasks
+nikola check                check links and files in the generated site
+nikola clean                clean action / remove targets
+nikola console              start an interactive python console with access to
+                            your site and configuration
+nikola deploy               deploy the site
+nikola dumpdb               dump dependency DB
+nikola forget               clear successful run status from internal DB
+nikola help                 show help
+nikola ignore               ignore task (skip) on subsequent runs
+nikola import_blogger       import a blogger dump
+nikola import_feed          import a RSS/Atom dump
+nikola import_wordpress     import a WordPress dump
+nikola init                 create a Nikola site in the specified folder
+nikola install_theme        install theme into current site
+nikola list                 list tasks from dodo file
+nikola mincss               apply mincss to the generated site
+nikola new_post             create a new blog post or site page
+nikola run                  run tasks
+nikola serve                start the test webserver
+nikola strace               use strace to list file_deps and targets
+nikola version              print the Nikola version number
+
+nikola help                 show help / reference
+nikola help &lt;command&gt;       show command usage
+nikola help &lt;task-name&gt;     show task usage
+</pre>
+<p>That will give you a list of all available commands in your version of Nikola.
+Each and every one of those is a plugin. Let's look at a typical example:</p>
+<p>First, the <tt class="docutils literal">command_serve.plugin</tt> file:</p>
+<pre>[Core]
+Name = serve
+Module = serve
+
+[Documentation]
+Author = Roberto Alsina
+Version = 0.1
+Website = http://getnikola.com
+Description = Start test server.</pre><div class="note">
+<p class="first admonition-title">Note</p>
+<p class="last">If you want to publish your plugin on the Plugin Index, <a class="reference external" href="https://github.com/getnikola/plugins/blob/master/README.md">read
+the docs for the Index</a>
+(and the .plugin file examples and explanations).</p>
+</div>
+<p>For your own plugin, just change the values in a sensible way. The
+<tt class="docutils literal">Module</tt> will be used to find the matching python module, in this case
+<tt class="docutils literal">serve.py</tt>, from which this is the interesting bit:</p>
+<pre>from nikola.plugin_categories import Command
+
+# You have to inherit Command for this to be a
+# command plugin:
+
+class CommandBuild(Command):
+    """Start test server."""
+
+    name = "serve"
+    doc_usage = "[options]"
+    doc_purpose = "start the test webserver"
+
+    cmd_options = (
+        {
+            'name': 'port',
+            'short': 'p',
+            'long': 'port',
+            'default': 8000,
+            'type': int,
+            'help': 'Port nummber (default: 8000)',
+        },
+        {
+            'name': 'address',
+            'short': 'a',
+            'long': '--address',
+            'type': str,
+            'default': '127.0.0.1',
+            'help': 'Address to bind (default: 127.0.0.1)',
+        },
+    )
+
+    def _execute(self, options, args):
+        """Start test server."""
+        out_dir = self.site.config['OUTPUT_FOLDER']
+        if not os.path.isdir(out_dir):
+            print("Error: Missing '{0}' folder?".format(out_dir))
+        else:
+            os.chdir(out_dir)
+            httpd = HTTPServer((options['address'], options['port']),
+                            OurHTTPRequestHandler)
+            sa = httpd.socket.getsockname()
+            print("Serving HTTP on", sa[0], "port", sa[1], "...")
+            httpd.serve_forever()</pre><p>As mentioned above, a plugin can have options, which the user can see by doing
+<tt class="docutils literal">nikola help command</tt> and can later use, for example:</p>
+<pre class="literal-block">
+$ nikola help serve
+Purpose: start the test webserver
+Usage:   nikola serve [options]
+
+Options:
+-p ARG, --port=ARG        Port nummber (default: 8000)
+-a ARG, ----address=ARG   Address to bind (default: 127.0.0.1)
+
+$ nikola serve -p 9000
+Serving HTTP on 127.0.0.1 port 9000 ...
+</pre>
+<p>So, what can you do with commands? Well, anything you want, really. I have implemented
+a sort of planet using it. So, be creative, and if you do something interesting,
+let me know ;-)</p>
+</div>
+<div class="section" id="templatesystem-plugins">
+<h3><a class="toc-backref" href="extending.html#id3">TemplateSystem Plugins</a></h3>
+<p>Nikola supports Mako and Jinja2. If you prefer some other templating
+system, then you will have to write a TemplateSystem plugin. Here's how they work.
+First, you have to create a .plugin file. Here's the one for the Mako plugin:</p>
+<pre>[Core]
+Name = mako
+Module = mako
+
+[Documentation]
+Author = Roberto Alsina
+Version = 0.1
+Website = http://getnikola.com
+Description = Support for Mako templates.</pre><div class="note">
+<p class="first admonition-title">Note</p>
+<p class="last">If you want to publish your plugin on the Plugin Index, <a class="reference external" href="https://github.com/getnikola/plugins/blob/master/README.md">read
+the docs for the Index</a>
+(and the .plugin file examples and explanations).</p>
+</div>
+<p>You will have to replace "mako" with your template system's name, and other data
+in the obvious ways.</p>
+<p>The "Module" option is the name of the module, which has to look something like this,
+a stub for a hypothetical system called "Templater":</p>
+<pre>from nikola.plugin_categories import TemplateSystem
+
+# You have to inherit TemplateSystem
+
+class TemplaterTemplates(TemplateSystem):
+    """Wrapper for Templater templates."""
+
+    # name has to match Name in the .plugin file
+    name = "templater"
+
+    # You *must* implement this, even if to return []
+    # It should return a list of all the files that,
+    # when changed, may affect the template's output.
+    # usually this involves template inheritance and
+    # inclusion.
+    def get_deps(self, filename):
+        return []
+
+    # A list of directories where the templates will be
+    # located. Most template systems have some sort of
+    # template loading tool that can use this.
+
+    def set_directories(self, directories):
+        """Create a template lookup."""
+        pass
+
+    # The method that does the actual rendering.
+    # template_name is the name of the template file,
+    # output_name is the file for the output, context
+    # is a dictionary containing the data the template
+    # uses for rendering.
+
+    def render_template(self, template_name, output_name,
+        context, global_context):
+        """Render the template into output_name using context."""
+        pass</pre></div>
+<div class="section" id="task-plugins">
+<h3><a class="toc-backref" href="extending.html#id4">Task Plugins</a></h3>
+<p>If you want to do something that depends on the data in your site, you
+probably want to do a Task plugin, which will make it be part of the
+<tt class="docutils literal">nikola build</tt> command. There are the currently available tasks, all
+provided by plugins:</p>
+<div class="sidebar">
+<p class="first sidebar-title">Other Tasks</p>
+<p class="last">There are also <tt class="docutils literal">LateTask</tt> plugins, which are executed later,
+and <tt class="docutils literal">TaskMultiplier</tt> plugins that take a task and create
+more tasks out of it.</p>
+</div>
+<pre class="literal-block">
+$ nikola list
+Scanning posts....done!
+build_bundles
+build_less
+copy_assets
+copy_files
+post_render
+redirect
+render_archive
+render_galleries
+render_galleries_clean
+render_indexes
+render_listings
+render_pages
+render_posts
+render_rss
+render_site
+render_sources
+render_tags
+sitemap
+</pre>
+<p>These have access to the <tt class="docutils literal">site</tt> object which contains your timeline and
+your configuration.</p>
+<p>The critical bit of Task plugins is their <tt class="docutils literal">gen_tasks</tt> method, which <tt class="docutils literal">yields</tt>
+<a class="reference external" href="http://pydoit.org/tasks.html">doit tasks</a></p>
+<p>The details of how to handle dependencies, etc. are a bit too much for this
+document, so I'll just leave you with an example, the <tt class="docutils literal">copy_assets</tt> task.
+First the <tt class="docutils literal">task_copy_assets.plugin</tt> file, which you should copy and edit
+in the logical ways:</p>
+<pre>[Core]
+Name = copy_assets
+Module = task_copy_assets
+
+[Documentation]
+Author = Roberto Alsina
+Version = 0.1
+Website = http://getnikola.com
+Description = Copy theme assets into output.</pre><div class="note">
+<p class="first admonition-title">Note</p>
+<p class="last">If you want to publish your plugin on the Plugin Index, <a class="reference external" href="https://github.com/getnikola/plugins/blob/master/README.md">read
+the docs for the Index</a>
+(and the .plugin file examples and explanations).</p>
+</div>
+<p>And the <tt class="docutils literal">task_copy_assets.py</tt> file, in its entirety:</p>
+<pre>import os
+
+from nikola.plugin_categories import Task
+from nikola import utils
+
+# Have to inherit Task to be a task plugin
+class CopyAssets(Task):
+    """Copy theme assets into output."""
+
+    name = "copy_assets"
+
+    # This yields the tasks
+    def gen_tasks(self):
+        """Create tasks to copy the assets of the whole theme chain.
+
+        If a file is present on two themes, use the version
+        from the "youngest" theme.
+        """
+
+        # I put all the configurations and data the plugin uses
+        # in a dictionary because utils.config_changed will
+        # make it so that if these change, this task will be
+        # marked out of date, and run again.
+
+        kw = {
+            "themes": self.site.THEMES,
+            "output_folder": self.site.config['OUTPUT_FOLDER'],
+            "filters": self.site.config['FILTERS'],
+        }
+
+        tasks = {}
+        for theme_name in kw['themes']:
+            src = os.path.join(utils.get_theme_path(theme_name), 'assets')
+            dst = os.path.join(kw['output_folder'], 'assets')
+            for task in utils.copy_tree(src, dst):
+                if task['name'] in tasks:
+                    continue
+                tasks[task['name']] = task
+                task['uptodate'] = task.get('uptodate', []) + \
+                    [utils.config_changed(kw)]
+                task['basename'] = self.name
+                # If your task generates files, please do this.
+                yield utils.apply_filters(task, kw['filters'])</pre></div>
+<div class="section" id="pagecompiler-plugins">
+<h3><a class="toc-backref" href="extending.html#id5">PageCompiler Plugins</a></h3>
+<p>These plugins implement markup languages, they take sources for posts or pages and
+create HTML or other output files. A good example is the <tt class="docutils literal">misaka</tt> plugin.</p>
+<p>They must provide:</p>
+<dl class="docutils"><dt><tt class="docutils literal">compile_html</tt></dt>
+<dd>Function that builds a file.</dd>
+<dt><tt class="docutils literal">create_post</tt></dt>
+<dd>Function that creates an empty file with some metadata in it.</dd>
+</dl><p>If the compiler produces something other than HTML files, it should also implement <tt class="docutils literal">extension</tt> which
+returns the preferred extension for the output file.</p>
+</div>
+<div class="section" id="restextension-plugins">
+<h3><a class="toc-backref" href="extending.html#id6">RestExtension Plugins</a></h3>
+<p>Implement directives for reStructuredText, see <tt class="docutils literal">media.py</tt> for a simple example.</p>
+</div>
+<div class="section" id="signalhandler-plugins">
+<h3><a class="toc-backref" href="extending.html#id7">SignalHandler Plugins</a></h3>
+<p>These plugins extend the <tt class="docutils literal">SignalHandler</tt> class and connect to one or more
+signals via <a class="reference external" href="http://pythonhosted.org/blinker/">blinker</a></p>
+<p>The easiest way to do this is to reimplement <tt class="docutils literal">set_site()</tt> and just connect to
+whatever signals you want there.</p>
+<p>Currently Nikola emits the following signals:</p>
+<dl class="docutils"><dt><tt class="docutils literal">sighandlers_loaded</tt></dt>
+<dd>Right after SignalHandler plugin activation.</dd>
+<dt><tt class="docutils literal">initialized</tt></dt>
+<dd>Right after plugin activation</dd>
+<dt><tt class="docutils literal">configured</tt></dt>
+<dd>When all the configuration file is processed. Note that plugins are activated before this is emitted.</dd>
+<dt><tt class="docutils literal">new_post</tt></dt>
+<dd>When a new post is created, using the <tt class="docutils literal">nikola new_post</tt> command.  The signal
+data contains the path of the file, and the metadata file (if there is one).</dd>
+<dt><tt class="docutils literal">deployed</tt></dt>
+<dd><p class="first">When the <tt class="docutils literal">nikola deploy</tt> command is run, and there is at least one new
+entry/post since <tt class="docutils literal">last_deploy</tt>.  The signal data is of the form</p>
+<pre class="last literal-block">
+{
+ 'last_deploy: # datetime object for the last deployed time,
+ 'new_deploy': # datetime object for the current deployed time,
+ 'clean': # whether there was a record of a last deployment,
+ 'deployed': # all files deployed after the last deploy,
+ 'undeployed': # all files not deployed since they are either future posts/drafts
+}
+</pre>
+</dd>
+</dl></div>
+</div>
+<div class="section" id="plugin-index">
+<h2><a class="toc-backref" href="extending.html#id8">Plugin Index</a></h2>
+<p>There is a <a class="reference external" href="http://plugins.getnikola.com/">plugin index</a>, which stores all
+of the plugins for Nikola people wanted to share with the world.</p>
+<p>You may want to read the <a class="reference external" href="https://github.com/getnikola/plugins/blob/master/README.md">README for the Index</a> if you want to
+publish your package there.</p>
+</div>
+<div class="section" id="path-link-resolution-mechanism">
+<h2><a class="toc-backref" href="extending.html#id9">Path/Link Resolution Mechanism</a></h2>
+<p>Any plugin can register a function using <tt class="docutils literal">Nikola.register_path_handler</tt> to
+allow resolution of paths and links. These are useful for templates, which
+can access them via _link.</p>
+<p>For example, you can always get a link to the path for the feed of the "foo" tag
+by using <tt class="docutils literal"><span class="pre">_link('tag_rss',</span> 'foo')</tt> or the <tt class="docutils literal"><span class="pre">link://tag_rss/foo</span></tt> URL.</p>
+<p>Here's the relevant code from the tag plugin.</p>
+<pre># In set_site
+site.register_path_handler('tag_rss', self.tag_rss_path)
+
+# And these always take name and lang as arguments and returl a list of
+# path elements.
+def tag_rss_path(self, name, lang):
+    return [_f for _f in [self.site.config['TRANSLATIONS'][lang],
+                          self.site.config['TAG_PATH'], self.slugify_name(name) + ".xml"] if
+            _f]</pre></div></div>
+
+
+            Contents © 2014         <a href="mailto:phrontizein@gmail.com">phrontizein</a> - Powered by         <a href="http://getnikola.com" rel="nofollow">Nikola</a>         
+<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/2.5/ar/">
+<img alt="Creative Commons License BY-NC-SA" style="border-width:0; margin-bottom:12px;" src="http://i.creativecommons.org/l/by-nc-sa/2.5/ar/88x31.png"></a>
+            
+	
+<!-- Social buttons -->
+<div id="addthisbox" class="addthis_toolbox addthis_peekaboo_style addthis_default_style addthis_label_style addthis_32x32_style">
+<a class="addthis_button_more">Share</a>
+<ul><li><a class="addthis_button_facebook"></a>
+</li><li><a class="addthis_button_google_plusone_share"></a>
+</li><li><a class="addthis_button_linkedin"></a>
+</li><li><a class="addthis_button_twitter"></a>
+</li></ul></div>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-4f7088a56bb93798"></script><!-- End of social buttons --></div>
+    </section><script src="../assets/js/all-nocdn.js" type="text/javascript"></script><script type="text/javascript">
+            $(function(){
+                $('.timeago').timeago();
+            });
+        </script></body></html>
