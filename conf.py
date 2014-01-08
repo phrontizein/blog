@@ -31,13 +31,14 @@ DEFAULT_LANG = "en"
 NAVIGATION_LINKS = {
         DEFAULT_LANG: (
 			('/index.html', 'Home', 'icon-home'),
-			('http://getnikola.com', 'About me', 'icon-user'),
 			('/categories/index.html', 'Tags', 'icon-tags'),
             ('/archive.html', 'Archives', 'icon-folder-open-alt'),
             ('/rss.xml', 'RSS', 'icon-rss'),
+   			('http://getnikola.com', 'About me', 'icon-user'),
             ('https://github.com/phrontizein', 'My Github', 'icon-github'),
-            ('/galleries/demo/index.html', 'Gallery', 'icon-picture'),
+            ('/galleries/demo/index.html', 'My Gallery', 'icon-picture'),
             ('https://twitter.com/getnikola', 'My Twitter', 'icon-twitter'),
+            ('https://twitter.com/getnikola', 'My Twitter', 'icon-reddit'),
         )
 }
 
@@ -175,6 +176,12 @@ COMPILERS = {
 # plugin (`nikola install_plugin ping`).
 # To do manual deployment, set it to []
 # DEPLOY_COMMANDS = []
+DEPLOY_COMMANDS = ["git add .",
+                   "git commit -am 'Update'",
+                   "git push origin master",
+                   "git subtree split --prefix output -b gh-pages",
+                   "git push -f origin gh-pages:gh-pages",
+                   "git branch -D gh-pages"]
 
 # Where the output site should be located
 # If you don't use an absolute path, it will be considered as relative
